@@ -28,3 +28,33 @@ The entire interface is built with Jetpack Compose and Material 3. On devices ru
 Tech Stack
 
 The app is written in Kotlin 1.9.22 and targets Android 14 (API 34) with a minimum supported version of Android 7.0 Nougat (API 24). The UI layer uses Jetpack Compose with the 2024.02 BOM alongside Material 3 components. Charts are rendered by MPAndroidChart version 3.1.0, pulled in via JitPack. The project builds with Gradle 8.6 and Android Gradle Plugin 8.2.2.
+
+Problems Encountered and How They Were Solved
+
+Division by Zero When the Interest Rate Is Zero
+
+The future-value annuity formula for monthly contributions divides by r/12. When a user sets the rate to zero that denominator becomes zero, which would produce a NaN or crash. The fix was a simple guard at the top of the contributionAt helper: if r == 0.0 the function short-circuits and returns pmt multiplied by the total number of months, which is arithmetically correct and avoids the division entirely.
+
+Embedding a Legacy View-Based Chart Library Inside Jetpack Compose
+
+MPAndroidChart predates Compose and produces an ordinary Android View, not a Composable. Placing it directly in a Compose layout is not possible. The solution was to use Compose's AndroidView wrapper, which bridges the two systems. The factory lambda runs once to create and configure the LineChart (axis styles, touch settings, background), while the update lambda re-runs on every recomposition to push new data into the chart and trigger an animated refresh. This separation prevented the chart from being recreated from scratch on every keystroke.
+
+Passing Compose Color Values to the Chart
+
+MPAndroidChart expects colours as integer ARGB values, but Compose represents colours as its own Color type. Attempting to pass a Compose Color directly to a dataset caused a type mismatch. The fix was to call .toArgb() on each MaterialTheme colour before entering the AndroidView block, capturing the integer result in a local variable that the update lambda could use freely.
+
+Preventing Malformed Decimal Input
+
+Standard Android decimal keyboards allow users to type more than one decimal point (for example "10.00.5"), which cannot be parsed as a Double and would silently break the calculation. Inside the MoneyField composable the onValueChange callback strips everything except digits and the dot character, then checks whether the resulting string contains more than one dot. If it does, the previous valid value is kept instead of applying the new one, making it structurally impossible to produce an unparseable number.
+
+Handling Empty or Non-Numeric Fields Without Crashing
+
+If a field is cleared or contains only a partial entry such as a lone decimal point, calling toDouble() on the string throws an exception. Every numeric field is instead parsed with toDoubleOrNull(), and the result computation lives inside a derivedStateOf block that returns null whenever any parse fails. The UI simply hides the result card and chart when the derived value is null, so the app degrades gracefully rather than crashing.
+
+Y-Axis Labels Becoming Unreadable for Large Values
+
+When the principal or time period is large the raw dollar values on the chart's Y-axis overflowed their allocated space and overlapped each other. A custom ValueFormatter was attached to the left axis that abbreviates values: anything above one million is shown as a decimal followed by "M", anything above one thousand is shown as a whole number followed by "K", and smaller values are shown as plain integers. This kept the labels short and legible at every scale.
+
+Dynamic Colour Compatibility Across Android Versions
+
+Material You dynamic colour extraction requires Android 12 (API 31). Calling the dynamic colour APIs on an older device crashes at runtime. The CalcTheme composable wraps the dynamic colour path in a Build.VERSION.SDK_INT >= Build.VERSION_CODES.S check. Devices running Android 11 or earlier fall through to a handcrafted purple-and-teal static colour scheme, so the app looks intentional on all supported API levels rather than showing default grey Material colours.
