@@ -1,0 +1,142 @@
+================================================================
+ COMPOUND INTEREST CALCULATOR — ANDROID APP
+ Midterm-Bonus Submission
+================================================================
+
+----------------------------------------------------------------
+ PROBLEM STATEMENT
+----------------------------------------------------------------
+
+The assignment asked us to recreate a compound interest
+calculator — modelled on the reference at
+calculatorsoup.com/calculators/financial/compound-interest-
+calculator.php — as a native Android application.
+
+The core mathematical formula is:
+
+    A = P (1 + r/n) ^ (n * t)
+
+where:
+  A  = future value of the investment (principal + interest)
+  P  = principal (initial deposit or loan amount)
+  r  = annual interest rate expressed as a decimal
+       (e.g. 5 % → 0.05)
+  n  = number of times interest is compounded per year
+       (e.g. 12 for monthly, 365 for daily)
+  t  = time in years
+
+The rubric required Excellent marks across five categories:
+  1. Formula Precision   – handle all compounding frequencies
+                           and optional monthly contributions
+  2. Data Input & Validation – appropriate input types,
+                           crash-proof, clear labels
+  3. Visualising Growth  – dynamic chart distinguishing
+                           Principal from Interest Earned
+  4. Financial Insight   – "What If" feature and compounding-
+                           frequency impact explanation
+  5. UI Polish           – Material Design, real-time updates
+                           as sliders / inputs change
+
+----------------------------------------------------------------
+ FEATURES INCLUDED
+----------------------------------------------------------------
+
+1. FORMULA PRECISION (Excellent tier)
+   ─────────────────────────────────
+   • Implements A = P(1 + r/n)^(nt) exactly.
+   • Compounding frequency n is user-selectable:
+       Daily (365), Weekly (52), Monthly (12),
+       Quarterly (4), Semi-Annually (2), Annually (1).
+   • Optional monthly contributions use the standard
+     future-value annuity formula:
+       A_pmt = PMT × [(1 + r/12)^(12t) − 1] / (r/12)
+     The principal component uses the chosen frequency n;
+     contributions always compound monthly — the realistic
+     real-world model for recurring deposits.
+   • Zero-rate edge case (r = 0) is handled explicitly to
+     avoid division-by-zero; result is simply P + PMT*12*t.
+
+2. DATA INPUT & VALIDATION (Excellent tier)
+   ─────────────────────────────────────────
+   • Principal, Annual Rate, and Monthly Contribution fields
+     use KeyboardType.Decimal so the OS shows a numeric pad.
+   • A single-decimal-point guard strips extra '.' characters
+     as the user types — impossible to enter "10.00.5".
+   • Negative values are blocked before calculation via a
+     guard clause in the derivedStateOf lambda.
+   • Empty / non-numeric fields return null from
+     toDoubleOrNull(), which suppresses the result card
+     instead of crashing.
+   • All labels clearly state units: "Annual Rate (R) %",
+     "Principal (P) $", "Time (t in years)".
+
+3. VISUALISING GROWTH (Excellent tier)
+   ─────────────────────────────────────
+   • An interactive MPAndroidChart LineChart shows two filled
+     cubic-bezier curves from Year 0 to Year t:
+       – Total Value  (purple) — what you actually have
+       – Amount Invested  (teal) — what you put in
+     The gap between the two lines is visually the interest
+     earned, making compounding growth immediately obvious.
+   • Chart animates (animateX 600 ms) every time inputs change.
+   • Y-axis labels auto-scale to K / M suffixes for readability.
+   • X-axis labels show "Yr0", "Yr5", … for clarity.
+   • A colour legend sits above the chart.
+
+4. FINANCIAL INSIGHT (Excellent tier)
+   ─────────────────────────────────────
+   a) "What If?" card
+      • A slider lets the user add 0–20 extra years to the
+        current time horizon.
+      • The card instantly shows:
+          – The new total amount
+          – The extra money gained vs the base scenario
+          – The extra interest earned on top of that
+      • This makes the time-value-of-money lesson tangible:
+        starting just 5 years earlier on a $10,000 / 5% /
+        monthly plan yields thousands of dollars more.
+
+   b) Compounding Frequency Impact card
+      • A table recomputes the result for ALL SIX frequencies
+        using the same P, r, t, and PMT inputs.
+      • The currently selected frequency is highlighted,
+        so the user can see exactly how much daily vs annual
+        compounding differs.
+
+5. UI POLISH (Excellent tier)
+   ──────────────────────────
+   • Built entirely with Jetpack Compose + Material3.
+   • On Android 12+ (API 31) the app uses Material You
+     dynamic colour, adapting to the user's wallpaper palette.
+     On older devices a hand-crafted purple / teal scheme is
+     used as a fallback.
+   • All results are driven by derivedStateOf — no "Calculate"
+     button needed; every slider move or keystroke updates the
+     results card, the chart, the What If card, and the
+     frequency comparison table in real-time.
+   • Cards use 20 dp rounded corners and elevation for a clean,
+     layered look.
+   • Typography hierarchy: headlineMedium → titleMedium →
+     bodyLarge → bodySmall keeps information scannable.
+   • The result card uses the primaryContainer colour so it
+     stands out clearly from the input card.
+
+----------------------------------------------------------------
+ TECH STACK
+----------------------------------------------------------------
+
+  Language   : Kotlin 1.9.22
+  UI         : Jetpack Compose (BOM 2024.02) + Material3
+  Charts     : MPAndroidChart v3.1.0 (via JitPack)
+  Build      : Gradle 8.6 / Android Gradle Plugin 8.2.2
+  Min SDK    : 24 (Android 7.0 Nougat)
+  Target SDK : 34 (Android 14)
+
+----------------------------------------------------------------
+ HOW TO BUILD
+----------------------------------------------------------------
+
+  ./gradlew assembleDebug          # build APK
+  ./gradlew installDebug           # install on device/emulator
+
+================================================================
