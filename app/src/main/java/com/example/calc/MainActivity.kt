@@ -103,7 +103,7 @@ fun CompoundInterestScreen() {
     var monthly by remember { mutableStateOf("0") }
     var freq by remember { mutableStateOf(CompoundFrequency.MONTHLY) }
     var freqOpen by remember { mutableStateOf(false) }
-    var whatIfExtra by remember { mutableFloatStateOf(0f) }
+    var whatIfExtraYearsYears by remember { mutableFloatStateOf(0f) }
 
     val result by remember(principal, rate, years, monthly, freq) {
         derivedStateOf {
@@ -115,13 +115,13 @@ fun CompoundInterestScreen() {
         }
     }
 
-    val whatIfResult by remember(principal, rate, years, monthly, freq, whatIfExtra) {
+    val whatIfResult by remember(principal, rate, years, monthly, freq, whatIfExtraYears) {
         derivedStateOf {
-            if (whatIfExtra == 0f) return@derivedStateOf null
+            if (whatIfExtraYears == 0f) return@derivedStateOf null
             val p = principal.toDoubleOrNull() ?: return@derivedStateOf null
             val r = rate.toDoubleOrNull() ?: return@derivedStateOf null
             val pmt = monthly.toDoubleOrNull() ?: 0.0
-            compound(p, r, freq, years.toDouble() + whatIfExtra, pmt)
+            compound(p, r, freq, years.toDouble() + whatIfExtraYears, pmt)
         }
     }
 
@@ -340,12 +340,12 @@ fun CompoundInterestScreen() {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("💡 What If?", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "What if you started ${whatIfExtra.roundToInt()} year(s) earlier?",
+                        "What if you started ${whatIfExtraYears.roundToInt()} year(s) earlier?",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Slider(
-                        value = whatIfExtra, onValueChange = { whatIfExtra = it },
+                        value = whatIfExtraYears, onValueChange = { whatIfExtraYears = it },
                         valueRange = 0f..20f, steps = 19,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -401,10 +401,11 @@ fun CompoundInterestScreen() {
 fun MoneyField(value: String, label: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier, prefix: String? = null, suffix: String? = null) {
     OutlinedTextField(
         value = value,
-        onValueChange = { new -> onValueChange(new.filter { it.isDigit() || it == '.' }.let { s ->
-            // allow only one decimal point
-            if (s.count { it == '.' } <= 1) s else value
-        }) },
+        onValueChange = { new ->
+            val digits = new.filter { ch -> ch.isDigit() || ch == '.' }
+            val sanitised = if (digits.count { ch -> ch == '.' } <= 1) digits else value
+            onValueChange(sanitised)
+        },
         label = { Text(label) },
         prefix = prefix?.let { { Text(it) } },
         suffix = suffix?.let { { Text(it) } },
